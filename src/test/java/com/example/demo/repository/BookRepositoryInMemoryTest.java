@@ -1,0 +1,94 @@
+package com.example.demo.repository;
+
+import java.lang.StackWalker.Option;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import com.example.demo.model.Book;
+
+import ch.qos.logback.core.net.SyslogOutputStream;
+
+@SpringBootTest
+public class BookRepositoryInMemoryTest {
+	
+	/* 
+	 * @Autowired 自動綁定
+	 * 會自動找到實現 BookRepository 介面的實現類
+	 * 相當於 BookRepository bookRepository = new BookRepositoryInMemory();
+	*/
+	
+	@Autowired
+	@Qualifier("bookRepositoryInMemory")
+	//@Qualifier("bookRepositoryJdbc")
+	private BookRepository bookRepository;
+	
+	//@Test
+	void findAll() {
+		bookRepository.findAllBooks().forEach(System.out::println);
+		
+	}
+	
+	//@Test
+	void findById() {
+		Integer id = 1;
+		Optional<Book> optBook = bookRepository.getBookById(id);
+		if(optBook.isEmpty()) {
+			System.out.println("查無此書");
+			return;
+		}
+		System.out.println(optBook.get());
+		
+	}
+	
+	//@Test
+	void add() {
+		Book book = new Book(null, "Java", 100.0, 120, true);
+		boolean result = bookRepository.addBook(book);
+		System.out.println("新增" + result);
+		
+		findAll();
+	}
+	
+	//@Test
+	void update() {
+		Integer id = 1;
+		Optional<Book> optBook = bookRepository.getBookById(id);
+		if(optBook.isEmpty()) {
+			System.out.println("查無此書");
+			return;
+		}
+		
+		System.out.println("修改前");
+		findAll();
+		
+		System.out.println();
+		Book originalBook = optBook.get();
+		
+		originalBook.setAmount(77);
+		originalBook.setPrice(6.5);
+		
+		System.out.println("修改後");
+		findAll();
+		
+		
+	}
+	
+	@Test
+	void delete() {
+		System.out.println("刪除前");
+		findAll();
+		
+		Integer id = 1;
+		boolean result = bookRepository.deleteBookById(id);
+		System.out.println("刪除: " + result);
+		
+		System.out.println("刪除後");
+		findAll();
+	}
+	
+	
+}

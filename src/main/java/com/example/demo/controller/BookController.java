@@ -8,10 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,6 +17,9 @@ import com.example.demo.exception.BookException;
 import com.example.demo.model.Book;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.BookService;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 /**
@@ -114,9 +115,9 @@ public class BookController {
 		return ResponseEntity.ok(ApiResponse.success("查詢成功", books));
 	}
 	
-	//Get "/book/{id}" 查詢單一書籍
+	// Get "/book/{id} 查詢單一書籍
 	@GetMapping("/{id}")
-	public ResponseEntity<ApiResponse<Object>> getBookById(@PathVariable Integer id){
+	public ResponseEntity<ApiResponse<Object>> getBookById(@PathVariable Integer id) {
 		try {
 			Book book = bookService.getBookById(id);
 			return ResponseEntity.ok(ApiResponse.success("查詢成功", book));
@@ -124,11 +125,11 @@ public class BookController {
 			return ResponseEntity.badRequest().body(ApiResponse.success("查詢失敗", e.getMessage()));
 		}
 	}
+	
 	/*
 	 * Post "/book" 新增書籍
 	   新增書籍 json 格式:
 	 	{
-	 	    "id": 0,
 	 		"name": "Java 認證書籍",
 	 		"price": 11.5,
 	 		"amount": 25,
@@ -146,9 +147,9 @@ public class BookController {
 		}
 	}
 	
-	
+	// Delete "/book/{id}" 刪除指定書籍
 	@DeleteMapping("/{id}")
-	public ResponseEntity<ApiResponse<Object>> deleteBook(@PathVariable Integer id){
+	public ResponseEntity<ApiResponse<Object>> deleteBook(@PathVariable Integer id) {
 		try {
 			bookService.deleteBook(id);
 			return ResponseEntity.ok(ApiResponse.success("刪除成功", "id=%d".formatted(id)));
@@ -157,21 +158,71 @@ public class BookController {
 		}
 	}
 	
+	/* Put "/book/{id}" 完整修改
+	 	完整修改書籍 json 格式:
+	 	{
+	 		"name": "多拉A夢",
+	 		"price": 13.2,
+	 		"amount": 21,
+	 		"pub": false
+		}
+	 */
 	@PutMapping("/{id}")
-	public ResponseEntity<ApiResponse<Object>> updateBook(@PathVariable Integer id, @RequestBody Book book){
+	public ResponseEntity<ApiResponse<Object>> updateBook(@PathVariable Integer id, @RequestBody Book book) {
 		try {
+			// 修改
 			bookService.updateBook(id, book);
-			
+			// 重查該筆(確認是否真的修改成功)
 			book = bookService.getBookById(id);
 			return ResponseEntity.ok(ApiResponse.success("修改成功", book));
-		} catch (Exception e) {
+			
+		} catch (BookException e) {
 			return ResponseEntity.badRequest().body(ApiResponse.success("修改失敗", e.getMessage()));
 		}
 	}
 	
+	/*
+	 * Patch "/{id}" 部分修改: 只修改名稱與價格
+	 	{
+	 		"name": "多拉A夢",
+	 		"price": 13.2
+	 	}
+	 	或
+	 	{
+	 		"name": "多拉A夢"
+	 	}
+	 	或
+	 	{
+	 		"price": 13.2
+	 	}
+	 * */
+	@PatchMapping("/{id}")
+	public ResponseEntity<ApiResponse<Object>> patchBook(@PathVariable Integer id, @RequestBody Book book) {
+		// 1.是否有 name 與 price 的有效資料
+		boolean hasName = book.getName() != null && !book.getName().isEmpty() && !book.getName().isBlank();
+		boolean hasPrice = book.getPrice() != null && !book.getPrice().isNaN() && book.getPrice() > 0;
+		
+		if(!hasName && !hasPrice) {
+			return ResponseEntity.badRequest().body(ApiResponse.success("修改失敗", "請提供要修改的名稱與價格")); 
+		}
+		
+		// 2.進行修改
+		try {
+			if(hasName && hasPrice) bookService.updateBookNameAndPrice(id, book.getName(), book.getPrice());
+			if(hasName && !hasPrice) bookService.updateBookName(id, book.getName());
+			if(!hasName && hasPrice) bookService.updateBookPrice(id, book.getPrice());
+			
+			book = bookService.getBookById(id);
+			return ResponseEntity.ok(ApiResponse.success("修改成功", book));
+			
+		} catch (BookException e) {
+			return ResponseEntity.badRequest().body(ApiResponse.success("修改失敗", e.getMessage()));
+		}
+		
+	} 
+	
+	
 }
-
-
 
 
 

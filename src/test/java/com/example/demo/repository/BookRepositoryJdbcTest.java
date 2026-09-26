@@ -1,0 +1,65 @@
+package com.example.demo.repository;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import com.example.demo.model.Book;
+
+import ch.qos.logback.core.net.SyslogOutputStream;
+
+@SpringBootTest
+public class BookRepositoryJdbcTest {
+	
+	@Autowired
+	@Qualifier("bookRepositoryJdbc")
+	private BookRepository bookRepository;
+	
+	//@Test
+	public void add() {
+		Book book1 = new Book(0, "小叮噹", 12.5, 20, true);
+		Book book2 = new Book(0, "老夫子", 10.5, 30, true);
+		Book book3 = new Book(0, "好小子", 13.5, 40, true);
+		Book book4 = new Book(0, "小甜甜", 14.5, 10, false);
+		
+		bookRepository.addBook(book1);
+		bookRepository.addBook(book2);
+		bookRepository.addBook(book3);
+		bookRepository.addBook(book4);
+		
+	}
+	
+	//@Test
+	public void findAll() {
+		bookRepository.findAllBooks().forEach(System.out::println);
+	}
+	
+	//@Test
+	public void findOne() {
+		System.out.println(bookRepository.getBookById(1).get());
+	}
+	
+	//@Test
+	public void update() {
+		Integer id = 3;
+		
+		Book book = new Book();
+		book.setName("Java");
+		book.setPrice(15.5);
+		book.setAmount(12);
+		book.setPub(false);
+		
+		boolean updateOk = bookRepository.updateBook(id, book);
+		System.out.printf("Update Ok: %b%n", updateOk);
+	}
+	
+	@Test
+	public void delete() {
+		Integer id = 3;
+		
+		boolean deleteOk = bookRepository.deleteBookById(id);
+		System.out.printf("Delete Ok: %b%n", deleteOk);
+	}
+
+}
